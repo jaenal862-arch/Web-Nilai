@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Portal Ketuntasan Nilai & Tugas Siswa</title>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    /* Pastikan halaman dan iframe memenuhi seluruh layar tanpa scroll ganda */
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    @keyframes spinSlow {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .spinner {
+      animation: spinSlow 0.9s linear infinite;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans">
+
+  <!-- ===================================================================== -->
+  <!-- LAYAR LOADING SEMENTARA SAAT MEMUAT GOOGLE APPS SCRIPT                -->
+  <!-- ===================================================================== -->
+  <div id="loading-overlay" class="fixed inset-0 z-30 flex flex-col items-center justify-center bg-slate-950 px-6 text-center transition-opacity duration-500">
+    <div class="w-14 h-14 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center mb-5 shadow-lg">
+      <svg class="w-7 h-7 text-indigo-400 spinner" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"></circle>
+        <path class="opacity-90" fill="currentColor" d="M4 12a8 8 0 018-8v3a5 5 0 00-5 5H4z"></path>
+      </svg>
+    </div>
+
+    <h1 class="text-lg sm:text-xl font-bold tracking-tight text-white">
+      Portal Ketuntasan Nilai & Tugas Siswa
+    </h1>
+    <p class="mt-2 text-xs sm:text-sm text-slate-400 max-w-md">
+      Sedang menghubungkan ke server aplikasi sekolah. Mohon tunggu beberapa detik...
+    </p>
+
+    <!-- Tombol Cadangan (Muncul Otomatis Jika Loading Lebih Dari 8 Detik) -->
+    <div id="fallback-box" class="hidden mt-6 p-4 rounded-2xl bg-slate-900 border border-slate-800 max-w-md w-full space-y-3">
+      <p class="text-xs text-slate-300 leading-relaxed">
+        Tampilan membutuhkan waktu lebih lama atau diblokir oleh kebijakan akun/browser. Anda dapat membukanya langsung melalui tombol di bawah:
+      </p>
+      <div class="flex flex-col sm:flex-row gap-2 justify-center">
+        <a
+          id="direct-link"
+          href="https://script.google.com/a/macros/guru.sma.belajar.id/s/AKfycbywdIr0QY7SJBOdfG3-rEPwLLVP7cbVS1xNUug_pVW1HCR7H6N-_JzEwjNjFkSYaVr0/exec"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-colors"
+        >
+          Buka Aplikasi Langsung ↗
+        </a>
+        <button
+          type="button"
+          onclick="reloadApp()"
+          class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors"
+        >
+          Muat Ulang
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- IFRAME FULL-SCREEN GOOGLE APPS SCRIPT                                 -->
+  <!-- ===================================================================== -->
+  <iframe
+    id="gas-frame"
+    src="https://script.google.com/a/macros/guru.sma.belajar.id/s/AKfycbywdIr0QY7SJBOdfG3-rEPwLLVP7cbVS1xNUug_pVW1HCR7H6N-_JzEwjNjFkSYaVr0/exec"
+    title="Portal Ketuntasan Nilai & Tugas Siswa"
+    class="w-full h-full border-0 block bg-white"
+    referrerpolicy="no-referrer-when-downgrade"
+    allow="clipboard-read; clipboard-write; fullscreen"
+    allowfullscreen
+    onload="handleFrameLoaded()"
+  ></iframe>
+
+  <!-- ===================================================================== -->
+  <!-- TOMBOL PINTAS MENGAMBANG (SOLUSI JIKA IFRAME TERBLOKIR / BLANK)       -->
+  <!-- ===================================================================== -->
+  <div id="floating-bar" class="fixed bottom-4 right-4 z-40 flex items-center gap-1.5 bg-slate-900/90 backdrop-blur-md border border-slate-700/80 text-slate-100 px-2.5 py-2 rounded-2xl shadow-2xl">
+    <a
+      href="https://script.google.com/a/macros/guru.sma.belajar.id/s/AKfycbywdIr0QY7SJBOdfG3-rEPwLLVP7cbVS1xNUug_pVW1HCR7H6N-_JzEwjNjFkSYaVr0/exec"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-colors"
+      title="Buka langsung di tab baru jika halaman tidak muncul"
+    >
+      Buka Langsung ↗
+    </a>
+    <button
+      type="button"
+      onclick="reloadApp()"
+      class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors"
+      title="Muat ulang halaman"
+    >
+      Muat Ulang
+    </button>
+    <button
+      type="button"
+      onclick="hideFloatingBar()"
+      class="p-1.5 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white text-xs transition-colors"
+      title="Sembunyikan tombol ini"
+      aria-label="Tutup"
+    >
+      ✕
+    </button>
+  </div>
+
+  <script>
+    /**
+     * Konfigurasi URL Google Apps Script Web App
+     */
+    const GAS_WEBAPP_URL = 'https://script.google.com/a/macros/guru.sma.belajar.id/s/AKfycbywdIr0QY7SJBOdfG3-rEPwLLVP7cbVS1xNUug_pVW1HCR7H6N-_JzEwjNjFkSYaVr0/exec';
+
+    let isLoaded = false;
+
+    // Tampilkan opsi cadangan jika iframe belum selesai dimuat dalam 8 detik
+    const fallbackTimer = setTimeout(() => {
+      if (!isLoaded) {
+        const fallbackBox = document.getElementById('fallback-box');
+        if (fallbackBox) fallbackBox.classList.remove('hidden');
+      }
+    }, 8000);
+
+    /**
+     * Menyembunyikan layar loading saat halaman Apps Script selesai dimuat.
+     */
+    function handleFrameLoaded() {
+      isLoaded = true;
+      clearTimeout(fallbackTimer);
+
+      const overlay = document.getElementById('loading-overlay');
+      if (overlay) {
+        overlay.style.opacity = '0';
+        setTimeout(() => {
+          overlay.style.display = 'none';
+        }, 450);
+      }
+    }
+
+    /**
+     * Memuat ulang iframe jika terjadi kendala jaringan.
+     */
+    function reloadApp() {
+      try {
+        const frame = document.getElementById('gas-frame');
+        const fallbackBox = document.getElementById('fallback-box');
+        if (fallbackBox) fallbackBox.classList.add('hidden');
+        isLoaded = false;
+        if (frame) {
+          frame.src = GAS_WEBAPP_URL;
+        }
+      } catch (err) {
+        console.error('Gagal memuat ulang aplikasi:', err);
+      }
+    }
+
+    /**
+     * Menyembunyikan tombol pintas mengambang jika tampilan sudah berjalan normal.
+     */
+    function hideFloatingBar() {
+      const bar = document.getElementById('floating-bar');
+      if (bar) bar.style.display = 'none';
+    }
+  </script>
+</body>
+</html>
